@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>home</title>
+        <link rel="stylesheet" href={{ url_for('static', path='/style.css')}}/> 
+    </head>
+    <body>
+        <div id="user-zone">
+            Logged in as <strong id = 'curr-username'></strong><br>
+            Current chat         
+            <select name="room" id='room' class='hidden'>
+                <option value="" selected disabled>Select room</option>
+            </select>
+            <button id="leave-btn"onclick="location.href='/login'">Leave</button>
+        </div>
+
+    
+        <div id="chat-wrap">
+            <div id='messages'></div>
+            <div id="enter-message">
+                <textarea name="message" id="message-box" rows="3" placeholder="Enter message here..."></textarea>
+                <button id="add-message-btn">Add message</button>
+            </div>
+        </div>
+
+        <script src={{ url_for('static', path='/scripts.js')}}></script>
+        <script>startUpdates(localStorage.getItem('authToken'), 0)</script>
+        <script>
+            document.getElementById('curr-username').innerHTML = localStorage.getItem('username');
+
+            async function sendMessage(messageText, recipient = null) {
+                const token = localStorage.getItem('authToken');
+            
+                const requestBody = {
+                    message_text: messageText,
+                    recipient: recipient
+                };
+            
+                try {
+                    const response = await fetch("/send_message", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "Authorization": `Bearer ${token}`
+                        },
+                        body: JSON.stringify(requestBody)
+                    });
+            
+                    if (!response.ok) {
+                        throw new Error("Network response was not ok");
+                    }
+            
+                    const result = await response.json();
+                    return result;
+            
+                } catch (error) {
+                    console.error("Error sending message:", error);
+                    return false;
+                }
+            }
+            
+            document.getElementById('add-message-btn').addEventListener('click', async () => {
+                let recipient = null;
+                if (localStorage.getItem('role') == "Doctor") {
+                    recipient = localStorage.getItem("current_chat");
+                    if (recipient == "Select chat") {
+                        recipient = null;
+                    }
+                }
+                await sendMessage(document.getElementById("message-box").value, recipient);
+            })
+        </script>
+        
+    </body>
+</html>
